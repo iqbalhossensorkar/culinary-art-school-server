@@ -37,7 +37,13 @@ async function run() {
                 $set: user
             }
             const result = await usersCollection.updateOne(query, updateDoc, options)
-            console.log(result);
+            // console.log(result);
+            res.send(result)
+        })
+
+        app.get('/users', async(req, res) => {
+            const result = await usersCollection.find().toArray();
+            res.send(result);
         })
 
         // Send a ping to confirm a successful connection
