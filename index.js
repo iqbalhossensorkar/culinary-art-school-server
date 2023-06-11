@@ -2,6 +2,7 @@ const express = require('express')
 const app = express()
 const cors = require('cors')
 require('dotenv').config()
+const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 5000
 
 const corsOptions = {
@@ -27,12 +28,22 @@ async function run() {
     try {
         const usersCollection = client.db('culinaryDB').collection('users')
 
+        app.post('/jwt', (req, res) => {
+            const user = req.body;
+            const token = jwt.sign(user, env.process.ACCESS_TOKEN_SECRET, {expiresIn: '1h'})
+            res.send({token});
+        })
 
-        app.put('/users/:email', async(req, res) => {
+        app.get('/users', async (req, res) => {
+            const result = await usersCollection.find().toArray();
+            res.send(result);
+        })
+
+        app.put('/users/:email', async (req, res) => {
             const user = req.body;
             const email = req.params.email;
-            const query = {email: email}
-            const options = {upsert: true}
+            const query = { email: email }
+            const options = { upsert: true }
             const updateDoc = {
                 $set: user
             }
@@ -41,20 +52,25 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/users', async(req, res) => {
-            const result = await usersCollection.find().toArray();
-            res.send(result);
-        })
-
-        app.patch('/users/admin/:id', async(req, res) => {
+        app.patch('/users/admin/:id', async (req, res) => {
             const id = req.params.id;
-            const filter = {_id: new ObjectId(id)}
+            const filter = { _id: new ObjectId(id) }
             const updateDoc = {
                 $set: {
                     role: 'admin'
                 }
             };
-            
+            const result = await usersCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        })
+        app.patch('/users/instructor/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) }
+            const updateDoc = {
+                $set: {
+                    role: 'instructor'
+                }
+            };
             const result = await usersCollection.updateOne(filter, updateDoc);
             res.send(result);
         })
