@@ -42,6 +42,7 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         const usersCollection = client.db('culinaryDB').collection('users')
+        const classedCollection = client.db('culinaryDB').collection('classes')
 
         const verifyRole = async (req, res, next) => {
             const email = req.decoded.email;
@@ -126,6 +127,17 @@ async function run() {
                 }
             };
             const result = await usersCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        })
+
+        app.get('/class', async (req, res) => {
+            const result = await classedCollection.find().toArray();
+            res.send(result);
+        })
+
+        app.post('/class', async (req, res) => {
+            const newClass = req.body;
+            const result = await classedCollection.insertOne(newClass)
             res.send(result);
         })
 
