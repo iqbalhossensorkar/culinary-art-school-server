@@ -43,26 +43,16 @@ async function run() {
     try {
         const usersCollection = client.db('culinaryDB').collection('users')
 
-        const verifyAdmin = async (req, res, next) => {
+        const verifyRole = async (req, res, next) => {
             const email = req.decoded.email;
             const query = { email: email }
             const user = await usersCollection.findOne(query);
-            if (user?.role !== 'admin') {
-              return res.status(403).send({ error: true, message: 'forbidden message' });
-            }
-            next();
-          }
-
-
-        const verifyInstructor = async (req, res, next) => {
-            const email = req.decoded.email;
-            const query = {email: email}
-            const user = await usersCollection.findOne(query)
-            if (user?.role !== 'instructor') {
-                return res.status(403).send({ error: true, message: 'forbidden message' })
+            if (user?.role !== 'admin' && user?.role !== 'instructor') {
+                return res.status(403).send({ error: true, message: 'forbidden message' });
             }
             next();
         }
+
 
         app.post('/jwt', (req, res) => {
             const user = req.body;
@@ -70,7 +60,7 @@ async function run() {
             res.send({ token });
         })
 
-        app.get('/users', verifyJWT, verifyAdmin, verifyInstructor, async (req, res) => {
+        app.get('/users', verifyJWT, verifyRole, async (req, res) => {
             const result = await usersCollection.find().toArray();
             res.send(result);
         })
@@ -81,7 +71,7 @@ async function run() {
             const query = { email: email }
             const options = { upsert: true }
             const updateDoc = {
-                $set: user
+                $set: user,
             }
             const result = await usersCollection.updateOne(query, updateDoc, options)
             // console.log(result);
