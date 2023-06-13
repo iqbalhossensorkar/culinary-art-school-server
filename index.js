@@ -66,6 +66,12 @@ async function run() {
             res.send(result);
         })
 
+        app.get('/instructor', async (req, res) => {
+            const query = { role: 'instructor'}
+            const result = await usersCollection.find(query).toArray();
+            res.send(result);
+        })
+
         app.put('/users/:email', async (req, res) => {
             const user = req.body;
             const email = req.params.email;
@@ -130,14 +136,24 @@ async function run() {
             res.send(result);
         })
 
+        app.post('/class', async (req, res) => {
+            const newClass = req.body;
+            const result = await classedCollection.insertOne(newClass)
+            res.send(result);
+        })
+
         app.get('/class', async (req, res) => {
             const result = await classedCollection.find().toArray();
             res.send(result);
         })
-
-        app.post('/class', async (req, res) => {
-            const newClass = req.body;
-            const result = await classedCollection.insertOne(newClass)
+        app.get('/class/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ error: true, message: "Forbidden Access" })
+            }
+            const query = { 'instructor.email': email }
+            const result = await classedCollection.find(query).toArray();
             res.send(result);
         })
 
