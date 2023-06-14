@@ -66,6 +66,13 @@ async function run() {
             res.send(result);
         })
 
+        app.get('/users/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email }
+            const result = await usersCollection.findOne(query);
+            res.send(result);
+        })
+
         app.get('/instructor', async (req, res) => {
             const query = { role: 'instructor'}
             const result = await usersCollection.find(query).toArray();
@@ -154,6 +161,10 @@ async function run() {
         })
 
         app.get('/class', verifyJWT, verifyRole, async (req, res) => {
+            const result = await classedCollection.find().toArray();
+            res.send(result);
+        })
+        app.get('/approve', async (req, res) => {
             const result = await classedCollection.find().toArray();
             res.send(result);
         })
