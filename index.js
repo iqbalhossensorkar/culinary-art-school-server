@@ -43,6 +43,7 @@ async function run() {
     try {
         const usersCollection = client.db('culinaryDB').collection('users')
         const classedCollection = client.db('culinaryDB').collection('classes')
+        const cartsCollection = client.db('culinaryDB').collection('carts')
 
         const verifyRole = async (req, res, next) => {
             const email = req.decoded.email;
@@ -204,6 +205,12 @@ async function run() {
                const result = await classedCollection.updateOne(filter, updateDoc);
                res.send(result)
           });
+
+          app.post('/carts', async(req, res) => {
+            const item = req.body;
+            const result = await cartsCollection.insertOne(item)
+            res.send(result);
+          })
           
 
         // Send a ping to confirm a successful connection
