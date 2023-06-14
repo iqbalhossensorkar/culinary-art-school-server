@@ -131,7 +131,7 @@ async function run() {
                 $set: {
                     role: 'instructor'
                 }
-            };
+            }; 
             const result = await usersCollection.updateOne(filter, updateDoc);
             res.send(result);
         })
@@ -142,11 +142,7 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/class', async (req, res) => {
-            const result = await classedCollection.find().toArray();
-            res.send(result);
-        })
-        app.get('/class/:email', verifyJWT, async (req, res) => {
+        app.get('/class/:email', verifyJWT, verifyRole, async (req, res) => {
             const email = req.params.email;
             const decodedEmail = req.decoded.email;
             if (email !== decodedEmail) {
@@ -156,6 +152,48 @@ async function run() {
             const result = await classedCollection.find(query).toArray();
             res.send(result);
         })
+
+        app.get('/class', verifyJWT, verifyRole, async (req, res) => {
+            const result = await classedCollection.find().toArray();
+            res.send(result);
+        })
+
+        app.patch('/class/approved/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) }
+            const updateDoc = {
+                $set: {
+                    status: 'approve'
+                }
+            }; 
+            const result = await classedCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        })
+        
+        app.patch('/class/deny/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) }
+            const updateDoc = {
+                $set: {
+                    status: 'deny'
+                }
+            }; 
+            const result = await classedCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        })
+
+        app.post('/class/feedback', async (req, res) => {
+              const { classId, feedback } = req.body;
+              const filter = { _id: new ObjectId(classId) };
+              const updateDoc = {
+                $set: {
+                  feedback: feedback,
+                },
+              };
+               const result = await classedCollection.updateOne(filter, updateDoc);
+               res.send(result)
+          });
+          
 
         // Send a ping to confirm a successful connection
         await client.db('admin').command({ ping: 1 })
