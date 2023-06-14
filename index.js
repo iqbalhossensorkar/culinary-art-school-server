@@ -15,13 +15,14 @@ app.use(express.json())
 
 const verifyJWT = (req, res, next) => {
     const authorization = req.headers.authorization;
+    // console.log(authorization);
     if (!authorization) {
         return res.status(401).send({ error: true, message: 'unauthorized access' })
     }
     const token = authorization.split(' ')[1];
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decoded) => {
         if (error) {
-            return res.status(401).send({ error: true, message: 'unauthorized access' })
+            return res.status(403).send({ error: true, message: 'forbidden access' })
         }
         req.decoded = decoded;
         next();
@@ -75,7 +76,7 @@ async function run() {
         })
 
         app.get('/instructor', async (req, res) => {
-            const query = { role: 'instructor'}
+            const query = { role: 'instructor' }
             const result = await usersCollection.find(query).toArray();
             res.send(result);
         })
@@ -139,7 +140,7 @@ async function run() {
                 $set: {
                     role: 'instructor'
                 }
-            }; 
+            };
             const result = await usersCollection.updateOne(filter, updateDoc);
             res.send(result);
         })
@@ -161,10 +162,26 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/class', verifyJWT, verifyRole, async (req, res) => {
+        app.get('/class', async (req, res) => {
             const result = await classedCollection.find().toArray();
             res.send(result);
         })
+
+
+        // app.put('/class/:id', async (req, res) => {
+        //     const classes = req.body
+        //     console.log(req.body);
+        //     const id = req.params.id;
+        //     const filter = { _id: id }
+        //     console.log(filter);
+        //     const options = { upsert: true }
+        //     const updateDoc = {
+        //         $set: classes,
+        //     }
+        //     const result = await classedCollection.updateOne(filter, updateDoc, options)
+        //     res.send(result)
+        // })
+
         app.get('/approve', async (req, res) => {
             const result = await classedCollection.find().toArray();
             res.send(result);
@@ -177,11 +194,11 @@ async function run() {
                 $set: {
                     status: 'approve'
                 }
-            }; 
+            };
             const result = await classedCollection.updateOne(filter, updateDoc);
             res.send(result);
         })
-        
+
         app.patch('/class/deny/:id', async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) }
@@ -189,29 +206,54 @@ async function run() {
                 $set: {
                     status: 'deny'
                 }
-            }; 
+            };
             const result = await classedCollection.updateOne(filter, updateDoc);
             res.send(result);
         })
 
         app.post('/class/feedback', async (req, res) => {
-              const { classId, feedback } = req.body;
-              const filter = { _id: new ObjectId(classId) };
-              const updateDoc = {
+            const { classId, feedback } = req.body;
+            const filter = { _id: new ObjectId(classId) };
+            const updateDoc = {
                 $set: {
-                  feedback: feedback,
+                    feedback: feedback,
                 },
-              };
-               const result = await classedCollection.updateOne(filter, updateDoc);
-               res.send(result)
-          });
+            };
+            const result = await classedCollection.updateOne(filter, updateDoc);
+            res.send(result)
+        });
 
-          app.post('/carts', async(req, res) => {
+        app.post('/carts', async (req, res) => {
             const item = req.body;
             const result = await cartsCollection.insertOne(item)
             res.send(result);
-          })
-          
+        })
+
+        app.get('/carts', verifyJWT, async (req, res) => {
+            const email = req.query.email;
+
+            if (!email) {
+                res.send([]);
+            }
+
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ error: true, message: 'forbidden access' })
+            }
+
+            const query = { email: email };
+            const result = await cartsCollection.find(query).toArray();
+            res.send(result);
+        })
+
+        app.delete('/carts/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await cartsCollection.deleteOne(query);
+            res.send(result);
+        })
+
+
 
         // Send a ping to confirm a successful connection
         await client.db('admin').command({ ping: 1 })
